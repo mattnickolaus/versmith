@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/mattnickolaus/versmith/internal/database"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -16,6 +18,16 @@ type apiConfig struct {
 	db       *database.Queries
 	port     string
 	platform string
+	secret   string
+}
+
+type User struct {
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func main() {
@@ -41,6 +53,11 @@ func main() {
 		log.Fatal("FILEPATH_ROOT must be set")
 	}
 
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		log.Fatal("SECRET must be set")
+	}
+
 	db, err := openDB(dbURL)
 	if err != nil {
 		log.Fatalf("Couldn't connect to database: %v", err)
@@ -51,6 +68,7 @@ func main() {
 		db:       dbQueries,
 		port:     port,
 		platform: platformType,
+		secret:   secret,
 	}
 
 	mux := http.NewServeMux()
@@ -59,12 +77,18 @@ func main() {
 
 	mux.HandleFunc("POST /admin/reset", cfg.handlerReset)
 
+	mux.HandleFunc("POST /api/users", cfg.handlerUserCreate)
+	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+
+	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
+	mux.HandleFunc("POST /api/revoke", cfg.handlerRevoke)
+
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
 
-	log.Printf("Serving on: http://localhost:%s/app/\n", port)
+	log.Printf("Serving on: http://localhost:%s\n", port)
 	log.Fatal(srv.ListenAndServe())
 }
 

@@ -10,9 +10,29 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
+type Document struct {
 	ID        uuid.UUID
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
-	Email     string
+	Title     string
+	Content   sql.NullString
+	Url       string
+	UserID    uuid.UUID
+}
+
+type RefreshToken struct {
+	Token     string
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+	ExpiresAt sql.NullTime
+	RevokedAt sql.NullTime
+	UserID    uuid.UUID
+}
+
+type User struct {
+	ID             uuid.UUID
+	CreatedAt      sql.NullTime
+	UpdatedAt      sql.NullTime
+	Email          string
+	HashedPassword sql.NullString
 }
