@@ -5,11 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/mattnickolaus/versmith/internal/database"
 
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -19,15 +17,6 @@ type apiConfig struct {
 	port     string
 	platform string
 	secret   string
-}
-
-type User struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
 }
 
 func main() {
@@ -79,6 +68,9 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUserCreate)
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+
+	mux.HandleFunc("POST /api/documents", cfg.handlerCreateDocument)
+	mux.HandleFunc("GET /api/documents", cfg.handlerGetDocuments)
 
 	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
 	mux.HandleFunc("POST /api/revoke", cfg.handlerRevoke)

@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -17,33 +18,24 @@ INSERT INTO documents (
     created_at,
     updated_at,
     title,
-    url,
     user_id
 ) VALUES (
+    gen_random_uuid(),
+    NOW(),
+    NOW(),
     $1,
-    NOW(),
-    NOW(),
-    $2,
-    $3,
-    $4
+    $2
 )
-RETURNING id, created_at, updated_at, title, content, url, user_id
+RETURNING id, created_at, updated_at, title, content, user_id
 `
 
 type CreateDocumentParams struct {
-	ID     uuid.UUID
 	Title  string
-	Url    string
 	UserID uuid.UUID
 }
 
 func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error) {
-	row := q.db.QueryRowContext(ctx, createDocument,
-		arg.ID,
-		arg.Title,
-		arg.Url,
-		arg.UserID,
-	)
+	row := q.db.QueryRowContext(ctx, createDocument, arg.Title, arg.UserID)
 	var i Document
 	err := row.Scan(
 		&i.ID,
@@ -51,8 +43,63 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		&i.UpdatedAt,
 		&i.Title,
 		&i.Content,
-		&i.Url,
 		&i.UserID,
 	)
 	return i, err
+}
+
+const getDocumentsByOwner = `-- name: GetDocumentsByOwner :many
+SELECT 
+    documents.id,
+    documents.created_at,
+    documents.updated_at,
+    documents.title,
+    documents.user_id as user_id,
+    users.display_name as owner,
+    users.email as owner_email
+FROM documents
+JOIN users ON user_id = users.id
+WHERE user_id = $1
+ORDER BY documents.updated_at DESC
+`
+
+type GetDocumentsByOwnerRow struct {
+	ID         uuid.UUID
+	CreatedAt  sql.NullTime
+	UpdatedAt  sql.NullTime
+	Title      string
+	UserID     uuid.UUID
+	Owner      sql.NullString
+	OwnerEmail string
+}
+
+func (q *Queries) GetDocumentsByOwner(ctx context.Context, userID uuid.UUID) ([]GetDocumentsByOwnerRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDocumentsByOwner, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDocumentsByOwnerRow
+	for rows.Next() {
+		var i GetDocumentsByOwnerRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.UserID,
+			&i.Owner,
+			&i.OwnerEmail,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

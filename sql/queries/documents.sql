@@ -4,15 +4,26 @@ INSERT INTO documents (
     created_at,
     updated_at,
     title,
-    url,
     user_id
 ) VALUES (
+    gen_random_uuid(),
+    NOW(),
+    NOW(),
     $1,
-    NOW(),
-    NOW(),
-    $2,
-    $3,
-    $4
+    $2
 )
 RETURNING *;
 
+-- name: GetDocumentsByOwner :many
+SELECT 
+    documents.id,
+    documents.created_at,
+    documents.updated_at,
+    documents.title,
+    documents.user_id as user_id,
+    users.display_name as owner,
+    users.email as owner_email
+FROM documents
+JOIN users ON user_id = users.id
+WHERE user_id = $1
+ORDER BY documents.updated_at DESC;

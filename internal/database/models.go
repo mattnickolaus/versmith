@@ -16,7 +16,6 @@ type Document struct {
 	UpdatedAt sql.NullTime
 	Title     string
 	Content   sql.NullString
-	Url       string
 	UserID    uuid.UUID
 }
 
@@ -35,4 +34,5 @@ type User struct {
 	UpdatedAt      sql.NullTime
 	Email          string
 	HashedPassword sql.NullString
+	DisplayName    sql.NullString
 }
