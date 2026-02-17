@@ -1,14 +1,62 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+interface LoginRequestData {
+    email: string;
+    password: string;
+}
+
+interface LoginResponseData {
+    id: string;
+    created_at: string;
+    updated_at: string;
+    email: string;
+    jwt_token: string;
+    refresh_token: string;
+}
+
+async function loginUser(data: LoginRequestData): Promise<LoginResponseData> {
+    const url = '/api/login';
+
+    const response = await fetch(url, {
+	method: 'POST',
+	headers: {
+	    'Content-Type': 'application/json'
+	},
+	body: JSON.stringify(data),
+    } as RequestInit);
+
+    if (!response.ok) {
+	throw new Error (`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData: LoginResponseData = await response.json();
+    return responseData;
+}
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const navigate = useNavigate();
+
     const handleSubmit = (event) => {
 	event.preventDefault();
-	// TODO: login logic (connect to backend)
-	console.log('Login submitted:', { email, password });
+
+	const newLogin: LoginRequestData = {
+	    email: email,
+	    password: password,
+	};
+	loginUser(newLogin)
+	    .then(loggedInUser => {
+		console.log('User logged in with email:', loggedInUser.email, loggedInUser.id, loggedInUser.created_at);
+		// TODO: Implement React Context API to store access token -> loggedInUser.jwt_token
+		navigate('/');
+	    })
+	    .catch(error => {
+		console.log('Error logging in user:', error);
+	    })
+
     };
 
     return (
@@ -91,3 +139,4 @@ function Login() {
 }
 
 export default Login;
+

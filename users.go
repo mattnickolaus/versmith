@@ -16,7 +16,7 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
-	Token        string    `json:"token"`
+	JWTToken     string    `json:"jwt_token"`
 	RefreshToken string    `json:"refresh_token"`
 }
 
@@ -94,7 +94,7 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 		CreatedAt:    user.CreatedAt.Time,
 		UpdatedAt:    user.UpdatedAt.Time,
 		Email:        user.Email,
-		Token:        tokenString,
+		JWTToken:     tokenString,
 		RefreshToken: writtenRefreshToken.Token,
 	}
 
@@ -167,7 +167,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    user.CreatedAt.Time,
 		UpdatedAt:    user.UpdatedAt.Time,
 		Email:        user.Email,
-		Token:        tokenString,
+		JWTToken:     tokenString,
 		RefreshToken: writtenRefreshToken.Token,
 	}
 
