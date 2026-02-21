@@ -1,6 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
+interface CreateUserRequestData {
+    email: string;
+    password: string;
+}
+
+interface CreateUserResponseData {
+    id: string;
+    created_at: string;
+    updated_at: string;
+    email: string;
+    jwt_token: string;
+    refresh_token: string;
+}
+
+async function createUser(data: CreateUserRequestData): Promise<CreateUserResponseData> {
+    const url = '/api/users';
+
+    const response = await fetch(url, {
+	method: 'POST',
+	headers: {
+	    'Content-Type': 'application/json'
+	},
+	body: JSON.stringify(data),
+    } as RequestInit);
+
+    if (!response.ok) {
+	throw new Error (`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData: CreateUserResponseData = await response.json();
+    return responseData;
+}
+
 function SignUp() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
