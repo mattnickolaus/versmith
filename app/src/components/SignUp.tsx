@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'
 
 interface CreateUserRequestData {
     email: string;
@@ -11,8 +12,7 @@ interface CreateUserResponseData {
     created_at: string;
     updated_at: string;
     email: string;
-    jwt_token: string;
-    refresh_token: string;
+    access_token: string;
 }
 
 async function createUser(data: CreateUserRequestData): Promise<CreateUserResponseData> {
@@ -42,6 +42,8 @@ function SignUp() {
     const [error, setError] = useState('');
     const [passwordMismatch, setPasswordMismatch] = useState(false);
 
+    const { setAccessToken } = useAuth();
+
     const navigate = useNavigate();
 
     const handleSubmit = (event) => {
@@ -54,8 +56,19 @@ function SignUp() {
 	setError('');
 	setPasswordMismatch(false);
 
-	// TODO: login logic (connect to backend)
-	console.log('Login submitted:', { email, password });
+	const newUserData: CreateUserRequestData = {
+	    email: email,
+	    password: password,
+	};
+	createUser(newUserData)
+	    .then(newUser => {
+		setAccessToken(newUserData.access_token);
+		navigate('/');
+	    })
+	    .catch(error => {
+		console.log('Error creating new user:', error);
+	    })
+	
     };
 
     return (

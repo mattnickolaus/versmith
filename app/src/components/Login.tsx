@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'
 
 interface LoginRequestData {
     email: string;
@@ -11,8 +12,7 @@ interface LoginResponseData {
     created_at: string;
     updated_at: string;
     email: string;
-    jwt_token: string;
-    refresh_token: string;
+    access_token: string;
 }
 
 async function loginUser(data: LoginRequestData): Promise<LoginResponseData> {
@@ -38,6 +38,8 @@ function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const { setAccessToken } = useAuth();
+
     const navigate = useNavigate();
 
     const handleSubmit = (event) => {
@@ -50,7 +52,8 @@ function Login() {
 	loginUser(newLogin)
 	    .then(loggedInUser => {
 		console.log('User logged in with email:', loggedInUser.email, loggedInUser.id, loggedInUser.created_at);
-		// TODO: Implement React Context API to store access token -> loggedInUser.jwt_token
+
+		setAccessToken(loggedInUser.access_token);
 		navigate('/');
 	    })
 	    .catch(error => {

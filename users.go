@@ -12,12 +12,11 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	JWTToken     string    `json:"jwt_token"`
-	RefreshToken string    `json:"refresh_token"`
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+	JWTToken  string    `json:"jwt_token"`
 }
 
 func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
@@ -88,14 +87,14 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "Couldn't save refresh token", err)
 		return
 	}
+	setRefreshTokenCookie(w, writtenRefreshToken)
 
 	returnedUser := User{
-		ID:           user.ID,
-		CreatedAt:    user.CreatedAt.Time,
-		UpdatedAt:    user.UpdatedAt.Time,
-		Email:        user.Email,
-		JWTToken:     tokenString,
-		RefreshToken: writtenRefreshToken.Token,
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt.Time,
+		UpdatedAt: user.UpdatedAt.Time,
+		Email:     user.Email,
+		JWTToken:  tokenString,
 	}
 
 	respondWithJSON(w, http.StatusOK, returnedUser)
@@ -161,15 +160,29 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't save refresh token", err)
 		return
 	}
+	setRefreshTokenCookie(w, writtenRefreshToken)
 
 	returnedUser := User{
-		ID:           user.ID,
-		CreatedAt:    user.CreatedAt.Time,
-		UpdatedAt:    user.UpdatedAt.Time,
-		Email:        user.Email,
-		JWTToken:     tokenString,
-		RefreshToken: writtenRefreshToken.Token,
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt.Time,
+		UpdatedAt: user.UpdatedAt.Time,
+		Email:     user.Email,
+		JWTToken:  tokenString,
 	}
 
 	respondWithJSON(w, http.StatusOK, returnedUser)
+}
+
+func setRefreshTokenCookie(w http.ResponseWriter, refreshToken database.RefreshToken) {
+	cookie := http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken.Token,
+		Expires:  refreshToken.ExpiresAt.Time,
+		HttpOnly: true,
+		// Secure:   true, // turn back on after implementing https
+		Path:     "/", // NOTE: May want to restrict this to /api/refresh and /api/revoke (need to test)
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	http.SetCookie(w, &cookie)
 }
