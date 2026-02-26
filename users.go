@@ -12,11 +12,11 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	JWTToken  string    `json:"jwt_token"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	AccessToken string    `json:"access_token"`
 }
 
 func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
@@ -90,11 +90,11 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 	setRefreshTokenCookie(w, writtenRefreshToken)
 
 	returnedUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt.Time,
-		UpdatedAt: user.UpdatedAt.Time,
-		Email:     user.Email,
-		JWTToken:  tokenString,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt.Time,
+		UpdatedAt:   user.UpdatedAt.Time,
+		Email:       user.Email,
+		AccessToken: tokenString,
 	}
 
 	respondWithJSON(w, http.StatusOK, returnedUser)
@@ -163,11 +163,11 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	setRefreshTokenCookie(w, writtenRefreshToken)
 
 	returnedUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt.Time,
-		UpdatedAt: user.UpdatedAt.Time,
-		Email:     user.Email,
-		JWTToken:  tokenString,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt.Time,
+		UpdatedAt:   user.UpdatedAt.Time,
+		Email:       user.Email,
+		AccessToken: tokenString,
 	}
 
 	respondWithJSON(w, http.StatusOK, returnedUser)

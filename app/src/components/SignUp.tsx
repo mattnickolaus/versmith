@@ -27,7 +27,7 @@ async function createUser(data: CreateUserRequestData): Promise<CreateUserRespon
     } as RequestInit);
 
     if (!response.ok) {
-	throw new Error (`HTTP error! status: ${response.status}`);
+	throw new Error (`${response.status}`);
     }
 
     const responseData: CreateUserResponseData = await response.json();
@@ -67,6 +67,7 @@ function SignUp() {
 	    })
 	    .catch(error => {
 		console.log('Error creating new user:', error);
+		setError('Unable to create user')
 	    })
 	
     };
@@ -83,7 +84,14 @@ function SignUp() {
 	      <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">Create Your Account</h2>
 	    </div>
 
+
 	    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+		{error && 
+		    <div className="flex text-sm wrap-normal bg-red-300 border-red-500 border-1 rounded-md my-5 ">
+			<p className="font-semibold text-red-500 m-2 align-middle">! {error}</p>
+		    </div>
+		}
+		
 	      <form onSubmit={handleSubmit} className="space-y-6">
 		<div>
 		  <label htmlFor="email" className="block text-sm/6 font-medium text-gray-100">
@@ -108,9 +116,6 @@ function SignUp() {
 		    <label htmlFor="password" className="block text-sm/6 font-medium text-gray-100">
 		      Password
 		    </label>
-		    <div className="text-sm">
-		    {error && <p className="font-semibold text-red-500">{error}</p>}
-		    </div>
 		  </div>
 		  <div className="mt-2">
 		    <input

@@ -27,7 +27,7 @@ async function loginUser(data: LoginRequestData): Promise<LoginResponseData> {
     } as RequestInit);
 
     if (!response.ok) {
-	throw new Error (`HTTP error! status: ${response.status}`);
+	throw new Error (`${response.status}`);
     }
 
     const responseData: LoginResponseData = await response.json();
@@ -37,6 +37,7 @@ async function loginUser(data: LoginRequestData): Promise<LoginResponseData> {
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     const { setAccessToken } = useAuth();
 
@@ -57,7 +58,10 @@ function Login() {
 		navigate('/');
 	    })
 	    .catch(error => {
-		console.log('Error logging in user:', error);
+		console.log(error);
+
+		// try to add in specific messages based on http status for user errors
+		setError('Unable to authenticate account information');
 	    })
 
     };
@@ -75,6 +79,12 @@ function Login() {
 	    </div>
 
 	    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+		{error && 
+		    <div className="flex text-sm wrap-normal bg-red-300 border-red-500 border-1 rounded-md my-5 ">
+			<p className="font-semibold text-red-500 m-2 align-middle">! {error}</p>
+		    </div>
+		}
+
 	      <form onSubmit={handleSubmit} className="space-y-6">
 		<div>
 		  <label htmlFor="email" className="block text-sm/6 font-medium text-gray-100">
