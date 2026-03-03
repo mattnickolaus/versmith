@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import CreateDocumentModal from './CreateDocumentModal'
 
 interface Document {
     id: string;
@@ -77,6 +78,8 @@ function Home() {
 
     const navigate = useNavigate();
 
+    const [open, setOpen] = useState(false);
+
     useEffect(() => {
 	if (isAuthenticated) {
 	    getDocuments(accessToken).then((data) => {
@@ -93,10 +96,6 @@ function Home() {
 	return <div>Loading</div>
     }
 
-    const handleDocumentCreate = (e: React.MouseEvent<HTMLButtonElement>) => {
-	e.preventDefault();
-	console.log("Create Doc Button clicked");
-    };
 
     const handleOpenDocument = (e: React.MouseEvent<HTMLButtonElement>) => {
 	e.preventDefault();
@@ -250,7 +249,7 @@ function Home() {
         <header className="relative bg-gray-800 after:pointer-events-none after:absolute after:inset-x-0 after:inset-y-0 after:border-y after:border-white/10">
           <div className="flex mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 justify-between items-center">
             <h1 className="text-3xl font-bold tracking-tight text-white">My Documents</h1>
-	    <button onClick={handleDocumentCreate} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
+	    <button onClick={() => setOpen(true)} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
 		<PlusIcon className="h-5 w-5"/>
 		<span>Create Document</span>
 	    </button>
@@ -275,7 +274,10 @@ function Home() {
 			  
 			  <div className="mt-3">
 			    <p className="text-sm font-semibold truncate">{doc.title}</p>
-			    <p className="text-xs text-gray-500">Updated {dateFormatter(doc.updated_at)}</p>
+			    <div className="flex items-center justify-between">
+				<p className="text-xs text-gray-500">Updated {dateFormatter(doc.updated_at)}</p>
+				<EllipsisVerticalIcon className="h-5 w-5"/>
+			    </div>
 			  </div>
 			</div>
 		    ))
@@ -283,12 +285,9 @@ function Home() {
 	      </div>
 	  </div>
         </main>
-      </div>
 
-	<div>
-	    <div className="">
-	    </div>
-	</div>
+	<CreateDocumentModal open={open} setOpen={setOpen}/>
+      </div>
     </>
     );
 }

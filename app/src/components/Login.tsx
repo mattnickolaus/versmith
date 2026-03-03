@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
 
 interface LoginRequestData {
     email: string;
@@ -80,8 +81,9 @@ function Login() {
 
 	    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
 		{error && 
-		    <div className="flex text-sm wrap-normal bg-red-300 border-red-500 border-1 rounded-md my-5 ">
-			<p className="font-semibold text-red-500 m-2 align-middle">! {error}</p>
+		    <div className="flex items-center text-sm wrap-normal bg-red-300 border-red-500 border-1 rounded-md my-5 ">
+			<ExclamationCircleIcon className="m-2 size-6 text-red-500 align-middle"/>
+			<span className="font-semibold text-red-500 align-middle">{error}</span>
 		    </div>
 		}
 
