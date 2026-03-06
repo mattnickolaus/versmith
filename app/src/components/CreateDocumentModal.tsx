@@ -4,6 +4,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import { DocumentPlusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface CreateDocumentRequestData {
     title: string;
@@ -41,30 +42,30 @@ export default function CreateDocumentModal({open, setOpen}) {
     const [documentTitle, setDocumentTitle] = useState('');
     const { accessToken, isAuthenticated } = useAuth();
 
+    const navigate = useNavigate();
+
     const handleDocumentCreate = (event) => {
 	event.preventDefault();
 
-	useEffect(() => {
-	    if (isAuthenticated) {
-		const newDocument: CreateDocumentRequestData = {
-		    title: documentTitle,
-		};
+	if (isAuthenticated) {
+	    const newDocument: CreateDocumentRequestData = {
+		title: documentTitle,
+	    };
 
-		createDocumentRequest(newDocument, accessToken)
-		    .then(createdDocument => {
-			newDoucmentID = createdDocument.id;
-			console.log(`Document ID:${newDoucmentID}, Title:${createdDocument.title}, Created:${createdDocument.created_at}`);
+	    createDocumentRequest(newDocument, accessToken)
+		.then(createdDocument => {
+		    const newDoucmentID = createdDocument.id;
+		    console.log(`Document ID:${newDoucmentID}, Title:${createdDocument.title}, Created:${createdDocument.created_at}`);
 
-			navigate(`/api/documents/${newDoucmentID}`);
-		    })
-		    .catch(error => {
-			console.log(error);
-		    })
-	    } else {
-		console.log("Did not get access token");
-		navigate('/login');
-	    }
-	}, [accessToken, isAuthenticated]);
+		    navigate(`/api/documents/${newDoucmentID}`);
+		})
+		.catch(error => {
+		    console.log(error);
+		})
+	} else {
+	    console.log("Did not get access token");
+	    navigate('/login');
+	}
 
     };
 
