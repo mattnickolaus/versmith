@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'
-import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
-import CreateDocumentModal from './CreateDocumentModal'
+import { useAuth } from '../contexts/AuthContext';
+import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import CreateDocumentModal from './CreateDocumentModal';
 
 interface Document {
     id: string;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'
-import { ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '../contexts/AuthContext';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 interface LoginRequestData {
     email: string;
