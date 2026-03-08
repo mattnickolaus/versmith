@@ -48,6 +48,55 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 	return i, err
 }
 
+const deleteDocumentByID = `-- name: DeleteDocumentByID :exec
+DELETE FROM documents
+    WHERE id = $1
+`
+
+func (q *Queries) DeleteDocumentByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteDocumentByID, id)
+	return err
+}
+
+const getDocumentByID = `-- name: GetDocumentByID :one
+SELECT 
+    documents.id,
+    documents.created_at,
+    documents.updated_at,
+    documents.title,
+    documents.user_id as user_id,
+    users.display_name as owner,
+    users.email as owner_email
+FROM documents
+JOIN users ON user_id = users.id
+WHERE documents.id = $1
+`
+
+type GetDocumentByIDRow struct {
+	ID         uuid.UUID
+	CreatedAt  sql.NullTime
+	UpdatedAt  sql.NullTime
+	Title      string
+	UserID     uuid.UUID
+	Owner      sql.NullString
+	OwnerEmail string
+}
+
+func (q *Queries) GetDocumentByID(ctx context.Context, id uuid.UUID) (GetDocumentByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getDocumentByID, id)
+	var i GetDocumentByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.UserID,
+		&i.Owner,
+		&i.OwnerEmail,
+	)
+	return i, err
+}
+
 const getDocumentsByOwner = `-- name: GetDocumentsByOwner :many
 SELECT 
     documents.id,

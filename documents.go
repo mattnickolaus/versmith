@@ -148,3 +148,45 @@ func (cfg apiConfig) handlerGetDocuments(w http.ResponseWriter, r *http.Request)
 
 	respondWithJSON(w, http.StatusOK, responseDocuments)
 }
+
+func (cfg *apiConfig) handlerDeleteDocument(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't find JWT", err)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't validate JWT", err)
+		return
+	}
+
+	documentIDpath := r.PathValue("documentID")
+	if documentIDpath == "" {
+		respondWithError(w, http.StatusBadRequest, "Unable to retrieve chirpID from path", nil)
+		return
+	}
+	documentID, err := uuid.Parse(documentIDpath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't to parse uuid from document ID string", err)
+		return
+	}
+
+	queriedDocument, err := cfg.db.GetDocumentByID(r.Context(), documentID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Couldn't find document of that ID", err)
+		return
+	}
+	if queriedDocument.UserID != userID {
+		respondWithError(w, http.StatusForbidden, "Not authorized to delete that document", nil)
+		return
+	}
+
+	err = cfg.db.DeleteDocumentByID(r.Context(), documentID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't delete document by that ID", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent, nil)
+}

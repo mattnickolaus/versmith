@@ -71,6 +71,7 @@ func main() {
 
 	mux.HandleFunc("POST /api/documents", cfg.handlerCreateDocument)
 	mux.HandleFunc("GET /api/documents", cfg.handlerGetDocuments)
+	mux.HandleFunc("DELETE /api/documents/{documentID}", cfg.handlerDeleteDocument)
 
 	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
 	mux.HandleFunc("POST /api/revoke", cfg.handlerRevoke)

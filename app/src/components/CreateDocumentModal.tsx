@@ -90,12 +90,12 @@ export default function CreateDocumentModal({open, setOpen}) {
                     <DocumentPlusIcon aria-hidden="true" className="size-6 text-indigo-400" />
                   </div>
 
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                  <div className="flex-grow mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                     <DialogTitle as="h3" className="text-base font-semibold text-white">
                       Create Document
                     </DialogTitle>
 
-		    <form id="createDocumentForm" onSubmit={handleDocumentCreate} className="">
+		    <form id="createDocumentForm" onSubmit={handleDocumentCreate} className="pr-15">
 			{ /*
 			<div className="mt-2">
 			  <label className="text-sm text-gray-400">Document Title</label>

@@ -27,3 +27,20 @@ FROM documents
 JOIN users ON user_id = users.id
 WHERE user_id = $1
 ORDER BY documents.updated_at DESC;
+
+-- name: GetDocumentByID :one
+SELECT 
+    documents.id,
+    documents.created_at,
+    documents.updated_at,
+    documents.title,
+    documents.user_id as user_id,
+    users.display_name as owner,
+    users.email as owner_email
+FROM documents
+JOIN users ON user_id = users.id
+WHERE documents.id = $1;
+
+-- name: DeleteDocumentByID :exec
+DELETE FROM documents
+    WHERE id = $1;
