@@ -35,6 +35,7 @@ SELECT
     documents.updated_at,
     documents.title,
     documents.user_id as user_id,
+    documents.content,
     users.display_name as owner,
     users.email as owner_email
 FROM documents

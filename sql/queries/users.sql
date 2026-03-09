@@ -17,6 +17,11 @@ SELECT * FROM users
 WHERE $1 = email
 LIMIT 1;
 
+-- name: GetUserByID :one
+SELECT * FROM users
+WHERE id = $1
+LIMIT 1;
+
 -- name: UpdateUserEmail :one
 UPDATE users
 SET

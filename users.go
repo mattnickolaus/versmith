@@ -186,3 +186,32 @@ func setRefreshTokenCookie(w http.ResponseWriter, refreshToken database.RefreshT
 
 	http.SetCookie(w, &cookie)
 }
+
+func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Response) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't find JWT", err)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't validate JWT", err)
+		return
+	}
+
+	u, err := cfg.db.GetUserByID(r.Request.Context(), userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Unable to find user by that ID", err)
+		return
+	}
+
+	// NOTE: Add the other user name and other details
+	returnedUser := User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt.Time,
+		UpdatedAt: u.CreatedAt.Time,
+		Email:     u.Email,
+	}
+
+	respondWithJSON(w, http.StatusOK, returnedUser)
+}

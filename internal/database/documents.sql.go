@@ -65,6 +65,7 @@ SELECT
     documents.updated_at,
     documents.title,
     documents.user_id as user_id,
+    documents.content,
     users.display_name as owner,
     users.email as owner_email
 FROM documents
@@ -78,6 +79,7 @@ type GetDocumentByIDRow struct {
 	UpdatedAt  sql.NullTime
 	Title      string
 	UserID     uuid.UUID
+	Content    sql.NullString
 	Owner      sql.NullString
 	OwnerEmail string
 }
@@ -91,6 +93,7 @@ func (q *Queries) GetDocumentByID(ctx context.Context, id uuid.UUID) (GetDocumen
 		&i.UpdatedAt,
 		&i.Title,
 		&i.UserID,
+		&i.Content,
 		&i.Owner,
 		&i.OwnerEmail,
 	)

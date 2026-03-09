@@ -55,6 +55,8 @@ function Login() {
 	    .then(loggedInUser => {
 		console.log('User logged in with email:', loggedInUser.email, loggedInUser.id, loggedInUser.created_at);
 
+		// NOTE: Remove later used for debugging
+		console.log(`Access Token: ${loggedInUser.access_token}`)
 		setAccessToken(loggedInUser.access_token);
 		navigate('/');
 	    })

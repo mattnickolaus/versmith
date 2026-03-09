@@ -68,9 +68,11 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUserCreate)
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
+	mux.HandleFunc("GET /api/users", cfg.handlerGetUser)
 
 	mux.HandleFunc("POST /api/documents", cfg.handlerCreateDocument)
 	mux.HandleFunc("GET /api/documents", cfg.handlerGetDocuments)
+	mux.HandleFunc("GET /api/documents/{documentID}", cfg.handlerGetDocument)
 	mux.HandleFunc("DELETE /api/documents/{documentID}", cfg.handlerDeleteDocument)
 
 	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)

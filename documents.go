@@ -149,6 +149,60 @@ func (cfg apiConfig) handlerGetDocuments(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, http.StatusOK, responseDocuments)
 }
 
+func (cfg *apiConfig) handlerGetDocument(w http.ResponseWriter, r *http.Request) {
+	type returnDocument struct {
+		ID         uuid.UUID `json:"id"`
+		CreatedAt  time.Time `json:"created_at"`
+		UpdatedAt  time.Time `json:"updated_at"`
+		Title      string    `json:"title"`
+		Content    string    `json:"content"`
+		UserID     uuid.UUID `json:"user_id"`
+		Owner      string    `json:"owner"`
+		OwnerEmail string    `json:"owner_email"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't find JWT", err)
+		return
+	}
+	_, err = auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't validate JWT", err)
+		return
+	}
+
+	documentIDpath := r.PathValue("documentID")
+	if documentIDpath == "" {
+		respondWithError(w, http.StatusBadRequest, "Unable to retrieve chirpID from path", nil)
+		return
+	}
+	documentID, err := uuid.Parse(documentIDpath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't to parse uuid from document ID string", err)
+		return
+	}
+
+	queriedDocument, err := cfg.db.GetDocumentByID(r.Context(), documentID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Couldn't find document of that ID", err)
+		return
+	}
+
+	d := returnDocument{
+		ID:         queriedDocument.ID,
+		CreatedAt:  queriedDocument.CreatedAt.Time,
+		UpdatedAt:  queriedDocument.UpdatedAt.Time,
+		Title:      queriedDocument.Title,
+		Content:    queriedDocument.Content.String,
+		UserID:     queriedDocument.UserID,
+		Owner:      queriedDocument.Owner.String,
+		OwnerEmail: queriedDocument.OwnerEmail,
+	}
+
+	respondWithJSON(w, http.StatusOK, d)
+}
+
 func (cfg *apiConfig) handlerDeleteDocument(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
