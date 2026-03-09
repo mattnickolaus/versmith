@@ -17,6 +17,7 @@ type User struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	Email       string    `json:"email"`
 	AccessToken string    `json:"access_token"`
+	DisplayName string    `json:"display_name"`
 }
 
 func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
@@ -205,12 +206,12 @@ func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Response) {
 		return
 	}
 
-	// NOTE: Add the other user name and other details
 	returnedUser := User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt.Time,
-		UpdatedAt: u.CreatedAt.Time,
-		Email:     u.Email,
+		ID:          u.ID,
+		CreatedAt:   u.CreatedAt.Time,
+		UpdatedAt:   u.CreatedAt.Time,
+		Email:       u.Email,
+		DisplayName: u.DisplayName.String,
 	}
 
 	respondWithJSON(w, http.StatusOK, returnedUser)
