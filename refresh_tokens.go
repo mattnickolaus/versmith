@@ -9,7 +9,7 @@ import (
 
 func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	type accessTokenResponse struct {
-		Token string `json:"token"`
+		Token string `json:"access_token"`
 	}
 
 	cookie, err := r.Cookie("refresh_token")

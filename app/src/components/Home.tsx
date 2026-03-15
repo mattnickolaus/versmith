@@ -1,45 +1,65 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.js';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
-import CreateDocumentModal from './CreateDocumentModal';
+import CreateDocumentModal from './CreateDocumentModal.js';
 
 interface Document {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    title: string;
-    user_id: string;
-    owner: string;
-    owner_email: string;
+  id: string;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  user_id: string;
+  owner: string;
+  owner_email: string;
 }
 
 interface DocumentsResponse {
-    documents: []Document;
+  documents: []Document;
+}
+
+interface RefreshResponse {
+  access_token: string;
 }
 
 async function getDocuments(accessToken: string): Promise<DocumentsResponse> {
-    const url = 'api/documents';
+  const url = 'api/documents';
 
-    const response = await fetch(url, {
-	method: 'GET',
-	headers: {
-	    'Authorization': `Bearer ${accessToken}`,
-	    'Content-Type': 'application/json',
-	},
-    } as RequestInit);
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  } as RequestInit);
 
-    if (!response.ok) {
-	throw new Error (`HTTP error, status: ${response.status}`);
-    }
+  if (!response.ok) {
+    throw new Error(`HTTP error, status: ${response.status}`);
+  }
 
-    const responseData: DocumentsResponse = await response.json();
-    console.log(responseData);
-    return responseData;
+  const responseData: DocumentsResponse = await response.json();
+  console.log(responseData);
+  return responseData;
 }
 
-function dateFormatter(dateString: string): string{
+async function refreshAccessToken(): Promise<RefreshResponse> {
+  const url = 'api/refresh'
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'applciation/json',
+    },
+  } as RequestInit)
+
+  const responseData: RefreshResponse = await response.json();
+  console.log(`Refresh Response: ${responseData.access_token}`);
+  console.log(responseData);
+  return responseData;
+}
+
+function dateFormatter(dateString: string): string {
   const date = new Date(dateString);
 
   const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -72,38 +92,55 @@ function classNames(...classes) {
 }
 
 function Home() {
-    const { accessToken, isAuthenticated } = useAuth();
-    const [documentData, setDocumentData] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const { accessToken, setAccessToken, isAuthenticated } = useAuth();
+  const [documentData, setDocumentData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-    useEffect(() => {
-	if (isAuthenticated) {
-	    getDocuments(accessToken).then((data) => {
-	      setDocumentData(data);
-	      setLoading(false);
-	    });
-	} else {
-	    console.log("Did not get access token");
-	    navigate('/login');
-	}
-    }, [accessToken, isAuthenticated]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      getDocuments(accessToken).then((data) => {
+        setDocumentData(data);
+        setLoading(false);
+      });
+    } else {
+      console.log("Unable to get access token, attemping to refresh");
 
-    if (loading) {
-	return <div>Loading</div>
+      refreshAccessToken()
+        .then((data) => {
+          setAccessToken(data.access_token);
+          getDocuments(accessToken)
+            .then((data) => {
+              setDocumentData(data);
+              setLoading(false);
+            })
+            .catch(error => {
+              console.log(`Error: ${}`)
+            });
+        })
+        .catch(error => {
+          console.log(`Did not get access token: ${error}`);
+          navigate('/login');
+        });
+
     }
+  }, [accessToken, isAuthenticated]);
+
+  if (loading) {
+    return <div>Loading</div>
+  }
 
 
-    const handleOpenDocument = (e: React.MouseEvent<HTMLButtonElement>) => {
-	e.preventDefault();
-	console.log("Go to document");
-    };
+  const handleOpenDocument = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    console.log("Go to document");
+  };
 
 
-    return(
+  return (
     <>
 
       <div className="min-h-full">
@@ -249,47 +286,47 @@ function Home() {
         <header className="relative bg-gray-800 after:pointer-events-none after:absolute after:inset-x-0 after:inset-y-0 after:border-y after:border-white/10">
           <div className="flex mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 justify-between items-center">
             <h1 className="text-3xl font-bold tracking-tight text-white">My Documents</h1>
-	    <button onClick={() => setOpen(true)} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
-		<PlusIcon className="h-5 w-5"/>
-		<span>Create Document</span>
-	    </button>
+            <button onClick={() => setOpen(true)} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
+              <PlusIcon className="h-5 w-5" />
+              <span>Create Document</span>
+            </button>
           </div>
         </header>
         <main>
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
-	      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-		{
-		    documentData.map((doc) => (
-			<div
-			    key={doc.id}
-			  onClick={handleOpenDocument}
-			  className="cursor-pointer p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition duration-150 ease-in-out bg-white"
-			>
-			  <div className="bg-gray-100 h-40 flex items-center justify-center rounded-t-lg">
-			    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org">
-				<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-			    </svg>
-			  </div>
-			  
-			  <div className="mt-3">
-			    <p className="text-sm font-semibold truncate">{doc.title}</p>
-			    <div className="flex items-center justify-between">
-				<p className="text-xs text-gray-500">Updated {dateFormatter(doc.updated_at)}</p>
-				<EllipsisVerticalIcon className="h-5 w-5"/>
-			    </div>
-			  </div>
-			</div>
-		    ))
-		}
-	      </div>
-	  </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {
+                documentData.map((doc) => (
+                  <div
+                    key={doc.id}
+                    onClick={handleOpenDocument}
+                    className="cursor-pointer p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition duration-150 ease-in-out bg-white"
+                  >
+                    <div className="bg-gray-100 h-40 flex items-center justify-center rounded-t-lg">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-sm font-semibold truncate">{doc.title}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-500">Updated {dateFormatter(doc.updated_at)}</p>
+                        <EllipsisVerticalIcon className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
         </main>
 
-	<CreateDocumentModal open={open} setOpen={setOpen}/>
+        <CreateDocumentModal open={open} setOpen={setOpen} />
       </div>
     </>
-    );
+  );
 }
 
 export default Home;

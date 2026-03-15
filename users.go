@@ -188,7 +188,7 @@ func setRefreshTokenCookie(w http.ResponseWriter, refreshToken database.RefreshT
 	http.SetCookie(w, &cookie)
 }
 
-func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Response) {
+func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Counldn't find JWT", err)
@@ -200,7 +200,7 @@ func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Response) {
 		return
 	}
 
-	u, err := cfg.db.GetUserByID(r.Request.Context(), userID)
+	u, err := cfg.db.GetUserByID(r.Context(), userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unable to find user by that ID", err)
 		return
