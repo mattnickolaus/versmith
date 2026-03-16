@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext.js';
+import { useAuth } from '../contexts/AuthContext';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
-import CreateDocumentModal from './CreateDocumentModal.js';
+import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import CreateDocumentModal from './CreateDocumentModal';
 
 interface Document {
   id: string;
@@ -43,6 +43,23 @@ async function getDocuments(accessToken: string): Promise<DocumentsResponse> {
   return responseData;
 }
 
+//DELETE /api/documents/{documentID}
+async function deleteDocument(access_token: string, document_id: string): Promise<void> {
+    const url = `api/documents/${document_id}`;
+
+    const response = await fetch(url, {
+	method: 'DELETE',
+	headers: {
+	    'Authorization': `Bearer ${access_token}`,
+	    'Content-Type': 'application/json',
+	}
+    } as RequestInit);
+
+    if (!response.status == 204) {
+	throw new Error(`Delete failed HTTP error, status: ${response.status}`);
+    }
+}
+
 async function refreshAccessToken(): Promise<RefreshResponse> {
   const url = 'api/refresh'
 
@@ -69,23 +86,25 @@ function dateFormatter(dateString: string): string {
   }).format(date); // Example output: "Feb 18, 2025"
 
   return `${formattedDate}`;
-};
+}
 
 const user = {
   name: 'Letem Cook',
   email: 'letem@example.com',
   imageUrl:
     'https://media.istockphoto.com/id/2221502929/vector/flat-illustration-in-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette.jpg?s=612x612&w=0&k=20&c=UXmJu28hV6V_kdgSdGxSzv86liqvFHu3Kl3-V2P4brc=',
-}
+};
+
 const navigation = [
   { name: 'My Documents', href: '#', current: true },
   { name: 'Shared with Me', href: '#', current: false },
-]
+];
+
 const userNavigation = [
   { name: 'Your profile', href: '#' },
   { name: 'Settings', href: '#' },
   { name: 'Sign out', href: '#' },
-]
+];
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -98,7 +117,8 @@ function Home() {
 
   const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [openDocDialog, setOpenDocDialog] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -112,16 +132,12 @@ function Home() {
       refreshAccessToken()
         .then((data) => {
           setAccessToken(data.access_token);
-          getDocuments(accessToken)
-            .then((data) => {
+          getDocuments(accessToken).then((data) => {
               setDocumentData(data);
               setLoading(false);
-            })
-            .catch(error => {
-              console.log(`Error: ${}`)
-            });
+	    });
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(`Did not get access token: ${error}`);
           navigate('/login');
         });
@@ -137,6 +153,16 @@ function Home() {
   const handleOpenDocument = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     console.log("Go to document");
+  };
+
+  const handleDocumentDelete = (e: React.MouseEvent<HTMLButtonElement>, document_id) => {
+    e.stopPropagation()
+    deleteDocument(accessToken, document_id).then(() => {
+	setLoading(false);
+    });
+    console.log(`Delete document with id: ${document_id}`);
+
+    setDocumentData(documentData => documentData.filter(document => document.id != document_id));
   };
 
 
@@ -286,7 +312,7 @@ function Home() {
         <header className="relative bg-gray-800 after:pointer-events-none after:absolute after:inset-x-0 after:inset-y-0 after:border-y after:border-white/10">
           <div className="flex mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 justify-between items-center">
             <h1 className="text-3xl font-bold tracking-tight text-white">My Documents</h1>
-            <button onClick={() => setOpen(true)} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
+            <button onClick={() => setOpenCreate(true)} className="flex items-center space-x-2 p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 cursor-pointer">
               <PlusIcon className="h-5 w-5" />
               <span>Create Document</span>
             </button>
@@ -301,20 +327,44 @@ function Home() {
                   <div
                     key={doc.id}
                     onClick={handleOpenDocument}
-                    className="cursor-pointer p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition duration-150 ease-in-out bg-white"
+                    className="cursor-pointer p-4 border rounded-lg shadow-sm hover:shadow-lg hover:border-indigo-900 transition duration-150 ease-in-out border-white/5 bg-white/5 p-1 text-sm/6 text-white"
                   >
-                    <div className="bg-gray-100 h-40 flex items-center justify-center rounded-t-lg">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org">
+                    <div className="bg-gray-700 h-40 flex items-center justify-center rounded-t-lg">
+                      <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                       </svg>
                     </div>
 
                     <div className="mt-3">
-                      <p className="text-sm font-semibold truncate">{doc.title}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">Updated {dateFormatter(doc.updated_at)}</p>
-                        <EllipsisVerticalIcon className="h-5 w-5" />
-                      </div>
+			<Menu as="div" className="relative"> 
+			  <p className="text-sm font-semibold truncate">{doc.title}</p>
+			  <div className="flex items-center justify-between">
+			    <p className="text-xs text-gray-400">Updated {dateFormatter(doc.updated_at)}</p>
+			    <MenuButton onClick={(e) => {e.stopPropagation();}} className="inline-flex items-center gap-2 rounded-full text-sm/6 font-semibold text-white shadow-inner shadow-black/10 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-hover:bg-gray-600 data-open:bg-gray-500">
+				<EllipsisVerticalIcon className="h-5 w-5" />
+			    </MenuButton>
+
+			    <MenuItems anchor="bottom end" className="[--anchor-gap:20px] w-43 origin-top rounded-xl border border-white/5 bg-gray-900 p-1 text-sm/6 text-white transition duration-100 ease-out focus:outline-none data-closed:scale-95 data-closed:opacity-0"
+			    >
+			      <MenuItem>
+				<button className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10">
+				  <PencilIcon className="size-4 fill-white/30" />
+				  Rename
+				</button>
+			      </MenuItem>
+			      <MenuItem>
+				<button 
+				    onClick={(e) => handleDocumentDelete(e, doc.id)}
+				    className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10 data-focus:text-red"
+				>
+
+				  <TrashIcon className="size-4 fill-white/30" />
+				  Delete
+				</button>
+			      </MenuItem>
+			    </MenuItems>
+			  </div>
+			</Menu>
                     </div>
                   </div>
                 ))
@@ -323,7 +373,7 @@ function Home() {
           </div>
         </main>
 
-        <CreateDocumentModal open={open} setOpen={setOpen} />
+        <CreateDocumentModal open={openCreate} setOpen={setOpenCreate} />
       </div>
     </>
   );

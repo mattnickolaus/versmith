@@ -57,6 +57,7 @@ export default function CreateDocumentModal({open, setOpen}) {
 		    const newDoucmentID = createdDocument.id;
 		    console.log(`Document ID:${newDoucmentID}, Title:${createdDocument.title}, Created:${createdDocument.created_at}`);
 
+		    // change back to specific document route
 		    navigate(`/api/documents/${newDoucmentID}`);
 		})
 		.catch(error => {
