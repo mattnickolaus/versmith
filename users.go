@@ -216,3 +216,86 @@ func (cfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, returnedUser)
 }
+
+func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't find JWT", err)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Counldn't validate JWT", err)
+		return
+	}
+
+	type userParameters struct {
+		Password    string `json:"password"`
+		Email       string `json:"email"`
+		DisplayName string `json:"display_name"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	u := userParameters{}
+
+	err = decoder.Decode(&u)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode paramters", err)
+		return
+	}
+
+	updatedUser := database.User{}
+
+	if u.Password != "" {
+		hashedPassword, err := auth.HashPassword(u.Password)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't hash password", err)
+			return
+		}
+		sqlHashedPassword := sql.NullString{String: hashedPassword, Valid: true}
+
+		pswdUpdateParam := database.UpdateUserPasswordParams{
+			ID:             userID,
+			HashedPassword: sqlHashedPassword,
+		}
+
+		updatedUser, err = cfg.db.UpdateUserPassword(r.Context(), pswdUpdateParam)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't update password in Database", err)
+			return
+		}
+	} else if u.Email != "" {
+		emailUpdateParams := database.UpdateUserEmailParams{
+			ID:    userID,
+			Email: u.Email,
+		}
+		updatedUser, err = cfg.db.UpdateUserEmail(r.Context(), emailUpdateParams)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't update email in Database", err)
+			return
+		}
+	} else if u.DisplayName != "" {
+		displayNameUpdateParams := database.UpdateUserDisplayNameParams{
+			ID:          userID,
+			DisplayName: sql.NullString{String: u.Email, Valid: true},
+		}
+		updatedUser, err = cfg.db.UpdateUserDisplayName(r.Context(), displayNameUpdateParams)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't update display_name in Database", err)
+			return
+		}
+	} else {
+		respondWithError(w, http.StatusBadRequest, "No user update data provided", nil)
+		return
+	}
+
+	returnedUser := User{
+		ID:          updatedUser.ID,
+		CreatedAt:   updatedUser.CreatedAt.Time,
+		UpdatedAt:   updatedUser.CreatedAt.Time,
+		Email:       updatedUser.Email,
+		DisplayName: updatedUser.DisplayName.String,
+	}
+
+	respondWithJSON(w, http.StatusOK, returnedUser)
+}

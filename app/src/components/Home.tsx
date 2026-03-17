@@ -45,23 +45,39 @@ async function getDocuments(accessToken: string): Promise<DocumentsResponse> {
 
 //DELETE /api/documents/{documentID}
 async function deleteDocument(access_token: string, document_id: string): Promise<void> {
-    const url = `api/documents/${document_id}`;
+  const url = `api/documents/${document_id}`;
 
-    const response = await fetch(url, {
-	method: 'DELETE',
-	headers: {
-	    'Authorization': `Bearer ${access_token}`,
-	    'Content-Type': 'application/json',
-	}
-    } as RequestInit);
-
-    if (!response.status == 204) {
-	throw new Error(`Delete failed HTTP error, status: ${response.status}`);
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${access_token}`,
+      'Content-Type': 'application/json',
     }
+  } as RequestInit);
+
+  if (response.status !== 204) {
+    throw new Error(`Delete failed HTTP error, status: ${response.status}`);
+  }
 }
 
 async function refreshAccessToken(): Promise<RefreshResponse> {
-  const url = 'api/refresh'
+  const url = 'api/refresh';
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'applciation/json',
+    },
+  } as RequestInit);
+
+  const responseData: RefreshResponse = await response.json();
+  console.log(`Refresh Response: ${responseData.access_token}`);
+  console.log(responseData);
+  return responseData;
+}
+
+async function revokeRefreshToken(): Promise<void> {
+  const url = 'api/revoke';
 
   const response = await fetch(url, {
     method: 'POST',
@@ -70,10 +86,9 @@ async function refreshAccessToken(): Promise<RefreshResponse> {
     },
   } as RequestInit)
 
-  const responseData: RefreshResponse = await response.json();
-  console.log(`Refresh Response: ${responseData.access_token}`);
-  console.log(responseData);
-  return responseData;
+  if (response.status !== 204) {
+    throw new Error(`Refresh token revoke failed, HTTP error status: ${response.status}`);
+  }
 }
 
 function dateFormatter(dateString: string): string {
@@ -103,7 +118,6 @@ const navigation = [
 const userNavigation = [
   { name: 'Your profile', href: '#' },
   { name: 'Settings', href: '#' },
-  { name: 'Sign out', href: '#' },
 ];
 
 function classNames(...classes) {
@@ -112,13 +126,12 @@ function classNames(...classes) {
 
 function Home() {
   const { accessToken, setAccessToken, isAuthenticated } = useAuth();
-  const [documentData, setDocumentData] = useState(null);
+  const [documentData, setDocumentData] = useState<DocumentsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   const [openCreate, setOpenCreate] = useState(false);
-  const [openDocDialog, setOpenDocDialog] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -132,10 +145,10 @@ function Home() {
       refreshAccessToken()
         .then((data) => {
           setAccessToken(data.access_token);
-          getDocuments(accessToken).then((data) => {
-              setDocumentData(data);
-              setLoading(false);
-	    });
+          getDocuments(data.access_token).then((data) => {
+            setDocumentData(data);
+            setLoading(false);
+          });
         })
         .catch((error) => {
           console.log(`Did not get access token: ${error}`);
@@ -158,13 +171,18 @@ function Home() {
   const handleDocumentDelete = (e: React.MouseEvent<HTMLButtonElement>, document_id) => {
     e.stopPropagation()
     deleteDocument(accessToken, document_id).then(() => {
-	setLoading(false);
+      setLoading(false);
     });
     console.log(`Delete document with id: ${document_id}`);
 
     setDocumentData(documentData => documentData.filter(document => document.id != document_id));
   };
 
+  const handleRefreshRevoke = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    revokeRefreshToken();
+    navigate('/login');
+  }
 
   return (
     <>
@@ -238,6 +256,15 @@ function Home() {
                           </a>
                         </MenuItem>
                       ))}
+
+                      <MenuItem key="Signout">
+                        <button
+                          onClick={(e) => handleRefreshRevoke(e)}
+                          className="w-full block px-4 py-2 text-left text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
+                        >
+                          Sign Out
+                        </button>
+                      </MenuItem>
                     </MenuItems>
                   </Menu>
                 </div>
@@ -336,35 +363,35 @@ function Home() {
                     </div>
 
                     <div className="mt-3">
-			<Menu as="div" className="relative"> 
-			  <p className="text-sm font-semibold truncate">{doc.title}</p>
-			  <div className="flex items-center justify-between">
-			    <p className="text-xs text-gray-400">Updated {dateFormatter(doc.updated_at)}</p>
-			    <MenuButton onClick={(e) => {e.stopPropagation();}} className="inline-flex items-center gap-2 rounded-full text-sm/6 font-semibold text-white shadow-inner shadow-black/10 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-hover:bg-gray-600 data-open:bg-gray-500">
-				<EllipsisVerticalIcon className="h-5 w-5" />
-			    </MenuButton>
+                      <Menu as="div" className="relative">
+                        <p className="text-sm font-semibold truncate">{doc.title}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">Updated {dateFormatter(doc.updated_at)}</p>
+                          <MenuButton onClick={(e) => { e.stopPropagation(); }} className="inline-flex items-center gap-2 rounded-full text-sm/6 font-semibold text-white shadow-inner shadow-black/10 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-hover:bg-gray-600 data-open:bg-gray-500">
+                            <EllipsisVerticalIcon className="h-5 w-5" />
+                          </MenuButton>
 
-			    <MenuItems anchor="bottom end" className="[--anchor-gap:20px] w-43 origin-top rounded-xl border border-white/5 bg-gray-900 p-1 text-sm/6 text-white transition duration-100 ease-out focus:outline-none data-closed:scale-95 data-closed:opacity-0"
-			    >
-			      <MenuItem>
-				<button className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10">
-				  <PencilIcon className="size-4 fill-white/30" />
-				  Rename
-				</button>
-			      </MenuItem>
-			      <MenuItem>
-				<button 
-				    onClick={(e) => handleDocumentDelete(e, doc.id)}
-				    className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10 data-focus:text-red"
-				>
+                          <MenuItems anchor="bottom end" className="[--anchor-gap:20px] w-43 origin-top rounded-xl border border-white/5 bg-gray-900 p-1 text-sm/6 text-white transition duration-100 ease-out focus:outline-none data-closed:scale-95 data-closed:opacity-0"
+                          >
+                            <MenuItem>
+                              <button className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10">
+                                <PencilIcon className="size-4 fill-white/30" />
+                                Rename
+                              </button>
+                            </MenuItem>
+                            <MenuItem>
+                              <button
+                                onClick={(e) => handleDocumentDelete(e, doc.id)}
+                                className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10 data-focus:text-red"
+                              >
 
-				  <TrashIcon className="size-4 fill-white/30" />
-				  Delete
-				</button>
-			      </MenuItem>
-			    </MenuItems>
-			  </div>
-			</Menu>
+                                <TrashIcon className="size-4 fill-white/30" />
+                                Delete
+                              </button>
+                            </MenuItem>
+                          </MenuItems>
+                        </div>
+                      </Menu>
                     </div>
                   </div>
                 ))
