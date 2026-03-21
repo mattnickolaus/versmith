@@ -116,7 +116,7 @@ const navigation = [
 ];
 
 const userNavigation = [
-	{ name: 'Your profile', href: '#' },
+	{ name: 'Your profile', href: '/profile' },
 	{ name: 'Settings', href: '#' },
 ];
 
@@ -249,12 +249,12 @@ function Home() {
 										>
 											{userNavigation.map((item) => (
 												<MenuItem key={item.name}>
-													<a
-														href={item.href}
+													<Link
+														to={item.href}
 														className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:outline-hidden"
 													>
 														{item.name}
-													</a>
+													</Link>
 												</MenuItem>
 											))}
 
