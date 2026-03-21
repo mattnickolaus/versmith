@@ -16,8 +16,10 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == http.ErrNoCookie {
 			respondWithError(w, http.StatusUnauthorized, "Refresh token cookie not found", err)
+			return
 		}
 		respondWithError(w, http.StatusBadRequest, "Bad request", err)
+		return
 	}
 	refreshTokenString := cookie.Value
 
