@@ -243,6 +243,10 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode paramters", err)
 		return
 	}
+	if u == (userParameters{}) {
+		respondWithError(w, http.StatusBadRequest, "No user update data provided", nil)
+		return
+	}
 
 	updatedUser := database.User{}
 
@@ -264,7 +268,9 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 			respondWithError(w, http.StatusInternalServerError, "Couldn't update password in Database", err)
 			return
 		}
-	} else if u.Email != "" {
+	}
+
+	if u.Email != "" {
 		emailUpdateParams := database.UpdateUserEmailParams{
 			ID:    userID,
 			Email: u.Email,
@@ -274,7 +280,9 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 			respondWithError(w, http.StatusInternalServerError, "Couldn't update email in Database", err)
 			return
 		}
-	} else if u.DisplayName != "" {
+	}
+
+	if u.DisplayName != "" {
 		displayNameUpdateParams := database.UpdateUserDisplayNameParams{
 			ID:          userID,
 			DisplayName: sql.NullString{String: u.Email, Valid: true},
@@ -284,9 +292,6 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 			respondWithError(w, http.StatusInternalServerError, "Couldn't update display_name in Database", err)
 			return
 		}
-	} else {
-		respondWithError(w, http.StatusBadRequest, "No user update data provided", nil)
-		return
 	}
 
 	returnedUser := User{

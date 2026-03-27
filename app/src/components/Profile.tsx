@@ -1,8 +1,12 @@
+import React, { useEffect, useState } from 'react';
 import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid'
-import { ChevronDownIcon } from '@heroicons/react/16/solid'
 import { useNavigate, Link } from 'react-router-dom';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+
+import { useAuth } from '../contexts/AuthContext.js';
+import { refreshAccessToken, revokeRefreshToken } from '../services/auth.js';
+import { getUser, type User } from '../services/user.js';
 
 const navigation = [
   { name: 'My Documents', href: '/', current: true },
@@ -14,7 +18,7 @@ const userNavigation = [
   { name: 'Settings', href: '#' },
 ];
 
-function classNames(...classes) {
+function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
@@ -25,9 +29,59 @@ const user = {
 };
 // https://media.istockphoto.com/id/2221502929/vector/flat-illustration-in-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette.jpg?s=612x612&w=0&k=20&c=UXmJu28hV6V_kdgSdGxSzv86liqvFHu3Kl3-V2P4brc=
 
+
+
 export default function Profile() {
 
+  const [editDisplayName, setEditDisplayName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+
+  const [editEmail, setEditEmail] = useState(false);
+  const [email, setEmail] = useState('');
+
   const navigate = useNavigate();
+
+
+  const { accessToken, setAccessToken, isAuthenticated } = useAuth();
+  const [userData, setUserData] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      getUser(accessToken).then((data) => {
+        setUserData(data);
+
+        setEmail(data.email);
+        setDisplayName(data.display_name);
+      });
+    } else {
+      console.log("Unable to get access token, attemping to refresh");
+
+      refreshAccessToken()
+        .then((data) => {
+          setAccessToken(data.access_token);
+          getUser(accessToken).then((data) => {
+            setUserData(data);
+
+            setEmail(data.email);
+            setDisplayName(data.display_name);
+          });
+        })
+        .catch((error) => {
+          console.log(`Did not get access token: ${error}`);
+          navigate('/login');
+        });
+
+    }
+  }, [accessToken, isAuthenticated]);
+
+
+  const handleDisplayInput = (event) => {
+    setDisplayName(event.target.value);
+  };
+
+  const handleEmailInput = (event) => {
+    setEmail(event.target.value);
+  };
 
   return (
     <div className="min-h-full">
@@ -201,26 +255,82 @@ export default function Profile() {
           <form>
             <div className="space-y-12">
               <div className="border-b border-white/10 pb-12">
-                <h2 className="text-base/7 font-semibold text-white">Profile</h2>
                 <p className="mt-1 text-sm/6 text-gray-400">
                   Make changes to your display name, profile picture and email.
                 </p>
 
                 <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                   <div className="sm:col-span-4">
-                    <label htmlFor="username" className="block text-sm/6 font-medium text-white">
+                    <label htmlFor="displayName" className="block text-sm/6 font-medium text-white">
                       Display Name
                     </label>
-                    <div className="mt-2">
-                      <div className="flex items-center rounded-md bg-white/5 pl-3 outline-1 -outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-500">
-                        <input
-                          id="displayname"
-                          name="displayname"
-                          type="text"
-                          placeholder="janesmith"
-                          className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-white placeholder:text-gray-500 focus:outline-none sm:text-sm/6"
-                        />
+                    <div className="flex items-center mt-2">
+                      <div className="flex items-center rounded-md grow bg-white/5 pl-3 outline-1 -outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-500">
+                        {
+                          editDisplayName ?
+                            <input
+                              id="displayname"
+                              name="displayname"
+                              type="text"
+                              className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-white focus:outline-none sm:text-sm/6"
+                              value={displayName}
+                              onChange={handleDisplayInput}
+                            />
+                            :
+                            <input
+                              id="displayname"
+                              name="displayname"
+                              type="text"
+                              className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-gray-500 focus:outline-none sm:text-sm/6"
+                              value={displayName}
+                              disabled
+                            />
+                        }
                       </div>
+                      <button
+                        type="button"
+                        className="rounded-md ml-4 bg-indigo-500 px-3 py-2 text-sm font-semibold text-white inset-ring inset-ring-white/5 hover:bg-indigo-600"
+                        onClick={() => { setEditDisplayName(true) }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <label htmlFor="email" className="block text-sm/6 font-medium text-white">
+                      Email
+                    </label>
+                    <div className="flex items-center mt-2">
+                      <div className="flex items-center rounded-md grow bg-white/5 pl-3 outline-1 -outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-500">
+                        {
+                          editEmail ?
+                            <input
+                              id="displayname"
+                              name="displayname"
+                              type="email"
+                              className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-white focus:outline-none sm:text-sm/6"
+                              value={email}
+                              onChange={handleEmailInput}
+                            />
+                            :
+                            <input
+                              id="displayname"
+                              name="displayname"
+                              type="email"
+                              className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-gray-500 focus:outline-none sm:text-sm/6"
+                              value={email}
+                              disabled
+                            />
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-md ml-4 bg-indigo-500 px-3 py-2 text-sm font-semibold text-white inset-ring inset-ring-white/5 hover:bg-indigo-600"
+                        onClick={() => { setEditEmail(true) }}
+                      >
+                        Edit
+                      </button>
                     </div>
                   </div>
 
@@ -315,131 +425,9 @@ export default function Profile() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <div className="flex h-6 shrink-0 items-center">
-                          <div className="group grid size-4 grid-cols-1">
-                            <input
-                              id="candidates"
-                              name="candidates"
-                              type="checkbox"
-                              aria-describedby="candidates-description"
-                              className="col-start-1 row-start-1 appearance-none rounded-sm border border-white/10 bg-white/5 checked:border-indigo-500 checked:bg-indigo-500 indeterminate:border-indigo-500 indeterminate:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:border-white/5 disabled:bg-white/10 disabled:checked:bg-white/10 forced-colors:appearance-auto"
-                            />
-                            <svg
-                              fill="none"
-                              viewBox="0 0 14 14"
-                              className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-disabled:stroke-white/25"
-                            >
-                              <path
-                                d="M3 8L6 11L11 3.5"
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="opacity-0 group-has-checked:opacity-100"
-                              />
-                              <path
-                                d="M3 7H11"
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="opacity-0 group-has-indeterminate:opacity-100"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="text-sm/6">
-                          <label htmlFor="candidates" className="font-medium text-white">
-                            Candidates
-                          </label>
-                          <p id="candidates-description" className="text-gray-400">
-                            Get notified when a candidate applies for a job.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="flex h-6 shrink-0 items-center">
-                          <div className="group grid size-4 grid-cols-1">
-                            <input
-                              id="offers"
-                              name="offers"
-                              type="checkbox"
-                              aria-describedby="offers-description"
-                              className="col-start-1 row-start-1 appearance-none rounded-sm border border-white/10 bg-white/5 checked:border-indigo-500 checked:bg-indigo-500 indeterminate:border-indigo-500 indeterminate:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:border-white/5 disabled:bg-white/10 disabled:checked:bg-white/10 forced-colors:appearance-auto"
-                            />
-                            <svg
-                              fill="none"
-                              viewBox="0 0 14 14"
-                              className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-disabled:stroke-white/25"
-                            >
-                              <path
-                                d="M3 8L6 11L11 3.5"
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="opacity-0 group-has-checked:opacity-100"
-                              />
-                              <path
-                                d="M3 7H11"
-                                strokeWidth={2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="opacity-0 group-has-indeterminate:opacity-100"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="text-sm/6">
-                          <label htmlFor="offers" className="font-medium text-white">
-                            Offers
-                          </label>
-                          <p id="offers-description" className="text-gray-400">
-                            Get notified when a candidate accepts or rejects an offer.
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </fieldset>
 
-                  <fieldset>
-                    <legend className="text-sm/6 font-semibold text-white">Push notifications</legend>
-                    <p className="mt-1 text-sm/6 text-gray-400">These are delivered via SMS to your mobile phone.</p>
-                    <div className="mt-6 space-y-6">
-                      <div className="flex items-center gap-x-3">
-                        <input
-                          defaultChecked
-                          id="push-everything"
-                          name="push-notifications"
-                          type="radio"
-                          className="relative size-4 appearance-none rounded-full border border-white/10 bg-white/5 before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-indigo-500 checked:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:border-white/5 disabled:bg-white/10 disabled:before:bg-white/20 forced-colors:appearance-auto forced-colors:before:hidden"
-                        />
-                        <label htmlFor="push-everything" className="block text-sm/6 font-medium text-white">
-                          Everything
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-x-3">
-                        <input
-                          id="push-email"
-                          name="push-notifications"
-                          type="radio"
-                          className="relative size-4 appearance-none rounded-full border border-white/10 bg-white/5 before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-indigo-500 checked:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:border-white/5 disabled:bg-white/10 disabled:before:bg-white/20 forced-colors:appearance-auto forced-colors:before:hidden"
-                        />
-                        <label htmlFor="push-email" className="block text-sm/6 font-medium text-white">
-                          Same as email
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-x-3">
-                        <input
-                          id="push-nothing"
-                          name="push-notifications"
-                          type="radio"
-                          className="relative size-4 appearance-none rounded-full border border-white/10 bg-white/5 before:absolute before:inset-1 before:rounded-full before:bg-white not-checked:before:hidden checked:border-indigo-500 checked:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:border-white/5 disabled:bg-white/10 disabled:before:bg-white/20 forced-colors:appearance-auto forced-colors:before:hidden"
-                        />
-                        <label htmlFor="push-nothing" className="block text-sm/6 font-medium text-white">
-                          No push notifications
-                        </label>
-                      </div>
-                    </div>
-                  </fieldset>
                 </div>
               </div>
             </div>
@@ -448,12 +436,22 @@ export default function Profile() {
               <button type="button" className="text-sm/6 font-semibold text-white">
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Save
-              </button>
+              {
+                editDisplayName || editEmail ?
+                  <button
+                    type="submit"
+                    className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  >
+                    Save
+                  </button>
+                  :
+                  <button
+                    type="submit"
+                    className="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  >
+                    Save
+                  </button>
+              }
             </div>
           </form>
         </div>

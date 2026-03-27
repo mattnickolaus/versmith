@@ -1,63 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import CreateDocumentModal from './CreateDocumentModal';
+import CreateDocumentModal from './CreateDocumentModal.js';
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 
+import { useAuth } from '../contexts/AuthContext.js';
 import { refreshAccessToken, revokeRefreshToken } from '../services/auth.js';
-
-interface Document {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  title: string;
-  user_id: string;
-  owner: string;
-  owner_email: string;
-}
-
-interface DocumentsResponse {
-  documents: []Document;
-}
-
-async function getDocuments(accessToken: string): Promise<DocumentsResponse> {
-  const url = 'api/documents';
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  } as RequestInit);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error, status: ${response.status}`);
-  }
-
-  const responseData: DocumentsResponse = await response.json();
-  console.log(responseData);
-  return responseData;
-}
-
-//DELETE /api/documents/{documentID}
-async function deleteDocument(access_token: string, document_id: string): Promise<void> {
-  const url = `api/documents/${document_id}`;
-
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${access_token}`,
-      'Content-Type': 'application/json',
-    }
-  } as RequestInit);
-
-  if (response.status !== 204) {
-    throw new Error(`Delete failed HTTP error, status: ${response.status}`);
-  }
-}
+import { getDocuments, deleteDocument, type DocumentsResponse } from '../services/documents.js'
 
 function dateFormatter(dateString: string): string {
   const date = new Date(dateString);
@@ -88,7 +38,7 @@ const userNavigation = [
   { name: 'Settings', href: '#' },
 ];
 
-function classNames(...classes) {
+function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
@@ -132,12 +82,12 @@ function Home() {
   }
 
 
-  const handleOpenDocument = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleOpenDocument = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     console.log("Go to document");
   };
 
-  const handleDocumentDelete = (e: React.MouseEvent<HTMLButtonElement>, document_id) => {
+  const handleDocumentDelete = (e: React.MouseEvent<HTMLButtonElement>, document_id: string) => {
     e.stopPropagation()
     deleteDocument(accessToken, document_id).then(() => {
       setLoading(false);

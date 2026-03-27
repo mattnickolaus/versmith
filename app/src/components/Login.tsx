@@ -45,7 +45,7 @@ function Login() {
       <div className="flex items-center h-screen flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
-            alt="Your Company"
+            alt="Versmith Logo"
             src="https://static.thenounproject.com/png/17491-200.png"
             className="invert mx-auto h-10 w-auto"
           />
