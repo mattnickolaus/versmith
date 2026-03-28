@@ -8,6 +8,7 @@ import (
 
 	"github.com/mattnickolaus/versmith/internal/database"
 
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -17,6 +18,7 @@ type apiConfig struct {
 	port     string
 	platform string
 	secret   string
+	upgrader websocket.Upgrader
 }
 
 func main() {
