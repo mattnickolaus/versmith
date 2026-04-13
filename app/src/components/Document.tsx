@@ -2,24 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import CreateDocumentModal from './CreateDocumentModal.js';
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 
 import { useAuth } from '../contexts/AuthContext.js';
 import { refreshAccessToken, revokeRefreshToken } from '../services/auth.js';
 import { getDocuments, deleteDocument, type DocumentsResponse } from '../services/documents.js'
 
-function dateFormatter(dateString: string): string {
-  const date = new Date(dateString);
+/*
+  *
+  * TODO:
+  * Implement Slate (https://docs.slatejs.org/) for the text editor and send the state of the editor contents as the content
+  * over the websocket
+  *
+  */
 
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date); // Example output: "Feb 18, 2025"
-
-  return `${formattedDate}`;
-}
 
 const user = {
   name: 'Letem Cook',
@@ -42,7 +38,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-function Home() {
+function Document() {
   const { accessToken, setAccessToken, isAuthenticated } = useAuth();
   const [documentData, setDocumentData] = useState<DocumentsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +46,6 @@ function Home() {
   const navigate = useNavigate();
 
   const [openCreate, setOpenCreate] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -81,11 +76,6 @@ function Home() {
     return <div>Loading</div>
   }
 
-
-  const handleOpenDocument = (e: React.MouseEvent<HTMLDivElement>, document_id: string) => {
-    console.log(`Go to document ${document_id}`);
-    navigate(`/documents/${document_id}`)
-  };
 
   const handleDocumentDelete = (e: React.MouseEvent<HTMLButtonElement>, document_id: string) => {
     e.stopPropagation()
@@ -278,61 +268,12 @@ function Home() {
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {
-                documentData.map((doc) => (
-                  <div
-                    key={doc.id}
-                    onClick={(e) => handleOpenDocument(e, doc.id)}
-                    className="cursor-pointer p-4 border rounded-lg shadow-sm hover:shadow-lg hover:border-indigo-900 transition duration-150 ease-in-out border-white/5 bg-white/5 p-1 text-sm/6 text-white"
-                  >
-                    <div className="bg-gray-700 h-40 flex items-center justify-center rounded-t-lg">
-                      <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                      </svg>
-                    </div>
-
-                    <div className="mt-3">
-                      <Menu as="div" className="relative">
-                        <p className="text-sm font-semibold truncate">{doc.title}</p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-400">Updated {dateFormatter(doc.updated_at)}</p>
-                          <MenuButton onClick={(e) => { e.stopPropagation(); }} className="inline-flex items-center gap-2 rounded-full text-sm/6 font-semibold text-white shadow-inner shadow-black/10 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white data-hover:bg-gray-600 data-open:bg-gray-500">
-                            <EllipsisVerticalIcon className="h-5 w-5" />
-                          </MenuButton>
-
-                          <MenuItems anchor="bottom end" className="[--anchor-gap:20px] w-43 origin-top rounded-xl border border-white/5 bg-gray-900 p-1 text-sm/6 text-white transition duration-100 ease-out focus:outline-none data-closed:scale-95 data-closed:opacity-0"
-                          >
-                            <MenuItem>
-                              <button className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10">
-                                <PencilIcon className="size-4 fill-white/30" />
-                                Rename
-                              </button>
-                            </MenuItem>
-                            <MenuItem>
-                              <button
-                                onClick={(e) => handleDocumentDelete(e, doc.id)}
-                                className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-white/10 data-focus:text-red"
-                              >
-
-                                <TrashIcon className="size-4 fill-white/30" />
-                                Delete
-                              </button>
-                            </MenuItem>
-                          </MenuItems>
-                        </div>
-                      </Menu>
-                    </div>
-                  </div>
-                ))
-              }
             </div>
           </div>
         </main>
-
-        <CreateDocumentModal open={openCreate} setOpen={setOpenCreate} />
       </div>
     </>
   );
 }
 
-export default Home;
+export default Document;

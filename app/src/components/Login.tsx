@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.js';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 import { loginUser } from '../services/auth.js';
@@ -24,7 +24,6 @@ function Login() {
     };
     loginUser(newLogin)
       .then(loggedInUser => {
-        console.log('User logged in with email:', loggedInUser.email, loggedInUser.id, loggedInUser.created_at);
 
         // NOTE: Remove later used for debugging
         console.log(`Access Token: ${loggedInUser.access_token}`)

@@ -155,3 +155,57 @@ func (q *Queries) GetDocumentsByOwner(ctx context.Context, userID uuid.UUID) ([]
 	}
 	return items, nil
 }
+
+const updateDocumentContentByID = `-- name: UpdateDocumentContentByID :one
+UPDATE documents
+SET content = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, created_at, updated_at, title, content, user_id
+`
+
+type UpdateDocumentContentByIDParams struct {
+	ID      uuid.UUID
+	Content sql.NullString
+}
+
+func (q *Queries) UpdateDocumentContentByID(ctx context.Context, arg UpdateDocumentContentByIDParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, updateDocumentContentByID, arg.ID, arg.Content)
+	var i Document
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.Content,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const updateDocumentTitleByID = `-- name: UpdateDocumentTitleByID :one
+UPDATE documents
+SET title = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, created_at, updated_at, title, content, user_id
+`
+
+type UpdateDocumentTitleByIDParams struct {
+	ID    uuid.UUID
+	Title string
+}
+
+func (q *Queries) UpdateDocumentTitleByID(ctx context.Context, arg UpdateDocumentTitleByIDParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, updateDocumentTitleByID, arg.ID, arg.Title)
+	var i Document
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.Content,
+		&i.UserID,
+	)
+	return i, err
+}

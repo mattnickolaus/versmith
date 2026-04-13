@@ -174,7 +174,7 @@ func (cfg *apiConfig) handlerGetDocument(w http.ResponseWriter, r *http.Request)
 
 	documentIDpath := r.PathValue("documentID")
 	if documentIDpath == "" {
-		respondWithError(w, http.StatusBadRequest, "Unable to retrieve chirpID from path", nil)
+		respondWithError(w, http.StatusBadRequest, "Unable to retrieve documentID from path", nil)
 		return
 	}
 	documentID, err := uuid.Parse(documentIDpath)
@@ -217,7 +217,7 @@ func (cfg *apiConfig) handlerDeleteDocument(w http.ResponseWriter, r *http.Reque
 
 	documentIDpath := r.PathValue("documentID")
 	if documentIDpath == "" {
-		respondWithError(w, http.StatusBadRequest, "Unable to retrieve chirpID from path", nil)
+		respondWithError(w, http.StatusBadRequest, "Unable to retrieve documentID from path", nil)
 		return
 	}
 	documentID, err := uuid.Parse(documentIDpath)

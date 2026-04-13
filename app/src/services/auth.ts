@@ -79,6 +79,10 @@ export async function refreshAccessToken(): Promise<RefreshResponse> {
     },
   } as RequestInit);
 
+  if (!response.ok) {
+    throw new Error(`${response.status}`);
+  }
+
   const responseData: RefreshResponse = await response.json();
   console.log(`Refresh Response: ${responseData.access_token}`);
   console.log(responseData);

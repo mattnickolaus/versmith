@@ -1,18 +1,30 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/mattnickolaus/versmith/internal/auth"
+	"github.com/mattnickolaus/versmith/internal/database"
 )
 
-func (cfg *apiConfig) handlerTestSockets(w http.ResponseWriter, r *http.Request) {
+/*
+	- [ ] Okay so I'm going to first focus on a pretty naive implementation where I'll stand up a websocket with the
+	client and just read pretty much every updated key press into some sort of simple in memory cache that eventually
+	reads that data into the database.
+
+	- [ ] After I get that going I'll also want to figure out storing other information like cursor position.
+
+	- [ ] And after that then I'll think about implementing RabbitMQ for pubsub out to publish document changes out to all users
+*/
+
+func (cfg *apiConfig) serverDocumentWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := cfg.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't upgrade connection to websocket", err)
@@ -33,7 +45,7 @@ func (cfg *apiConfig) handlerTestSockets(w http.ResponseWriter, r *http.Request)
 
 	documentIDpath := r.PathValue("documentID")
 	if documentIDpath == "" {
-		respondWithError(w, http.StatusBadRequest, "Unable to retrieve chirpID from path", nil)
+		respondWithError(w, http.StatusBadRequest, "Unable to retrieve documentID from path", nil)
 		return
 	}
 	documentID, err := uuid.Parse(documentIDpath)
@@ -42,44 +54,73 @@ func (cfg *apiConfig) handlerTestSockets(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	go wsDocUpdateReader(conn, documentID)
+	go cfg.wsDocUpdateReader(conn, documentID)
 }
 
 type DocumentUpdateParams struct {
-	Title   string `json:"title"`
 	Content string `json:"content"`
 }
 
-func wsDocUpdateReader(conn *websocket.Conn, docID uuid.UUID) {
+func (cfg apiConfig) wsDocUpdateReader(conn *websocket.Conn, docID uuid.UUID) {
 	// Go routine checking in loop for updates to document
+
+	doc := DocumentUpdateParams{}
 	for {
-		_, data, err := conn.ReadMessage()
+		err := conn.ReadJSON(doc)
 		if err != nil {
-			// TODO: some response to error
+			wsCriticalErrorCloseConn(conn, websocket.CloseInternalServerErr, "Could not parse JSON", err)
 			return
 		}
 
-		d := bytes.NewReader(data)
+		cfg.db.UpdateDocumentContentByID(
+			context.Background(),
+			database.UpdateDocumentContentByIDParams{
+				ID:      docID,
+				Content: sql.NullString{String: doc.Content, Valid: true},
+			},
+		)
 
-		decoder := json.NewDecoder(d)
-		docParam := DocumentUpdateParams{}
-		err = decoder.Decode(&docParam)
-		if err != nil {
-			// TODO: some response to error
-			return
-		}
-		fmt.Printf("Received: %s\n", data)
-
-		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-			fmt.Println("Error writing message:", err)
-			return
-		}
 	}
 }
 
 // TODO: Write helper fuctions except Websockets that are similar to respondWithJSON or respondWithError
 
-// Below is an example method to broadcast Messages to multiple clients
+// NOTE: gorilla has a helper func: conn.WriteJSON(v interface{}) error (as well as ReadJSON), which seems to meet the needs of respondWithJSON
+// Errors are a different story because if the error is critical I will just close the ws connection or if no critical it
+// will return back json with the error
+func wsRespondWithError(conn *websocket.Conn, msg string, err error) {
+	if err != nil {
+		log.Println(err)
+	}
+	type errorResponse struct {
+		Error string `json:"error"`
+	}
+	conn.WriteJSON(
+		errorResponse{
+			Error: msg,
+		},
+	)
+}
+
+func wsCriticalErrorCloseConn(conn *websocket.Conn, code int, msg string, err error) {
+	if err != nil {
+		log.Println(err)
+	}
+	// See Gorilla Close Codes https://pkg.go.dev/github.com/gorilla/websocket#pkg-constants
+	if code > 1000 {
+		log.Printf("Closing connection with code %d: %s", code, msg)
+	}
+	closeMsg := websocket.FormatCloseMessage(code, msg)
+
+	err = conn.WriteMessage(websocket.CloseMessage, closeMsg)
+	if err != nil {
+		wsRespondWithError(conn, "Couldn't write close message", err)
+		return
+	}
+	conn.Close()
+}
+
+// Below is an example method to broadcast Messages to multiple clients -- instead will likely opt for RabbitMQ
 var clients = make(map[*websocket.Conn]bool) // Connected clients
 var broadcast = make(chan []byte)            // Broadcast channel
 var mutex = &sync.Mutex{}                    // Protect clients map

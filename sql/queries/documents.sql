@@ -45,3 +45,18 @@ WHERE documents.id = $1;
 -- name: DeleteDocumentByID :exec
 DELETE FROM documents
     WHERE id = $1;
+
+-- name: UpdateDocumentContentByID :one
+UPDATE documents
+SET content = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+
+-- name: UpdateDocumentTitleByID :one
+UPDATE documents
+SET title = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
